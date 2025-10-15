@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Visual Assets - json2schema.app</title>
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #1a1b26;
+            color: #a6accd;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #82aaff;
+            margin-bottom: 2rem;
+        }
+        .asset-section {
+            background: #24283b;
+            border: 1px solid #414868;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .asset-section h2 {
+            color: #7dcfff;
+            margin-top: 0;
+        }
+        canvas {
+            border: 2px solid #414868;
+            margin: 1rem 0;
+            display: block;
+            background: white;
+        }
+        button {
+            background: #7aa2f7;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        button:hover {
+            background: #5a82d7;
+        }
+        .info {
+            background: #1e2030;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .preview-item {
+            text-align: center;
+        }
+        .preview-item canvas {
+            margin: 0 auto;
+        }
+        .success {
+            color: #9ece6a;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Generate Visual Assets for json2schema.app</h1>
+
+    <div class="asset-section">
+        <h2>📱 Favicons</h2>
+        <div class="info">
+            These favicons will appear in browser tabs, bookmarks, and home screens.
+        </div>
+
+        <div class="preview-grid">
+            <div class="preview-item">
+                <p>16x16</p>
+                <canvas id="favicon16" width="16" height="16"></canvas>
+                <button onclick="downloadCanvas('favicon16', 'favicon-16x16.png')">Download</button>
+            </div>
+            <div class="preview-item">
+                <p>32x32</p>
+                <canvas id="favicon32" width="32" height="32"></canvas>
+                <button onclick="downloadCanvas('favicon32', 'favicon-32x32.png')">Download</button>
+            </div>
+            <div class="preview-item">
+                <p>180x180 (Apple)</p>
+                <canvas id="apple180" width="180" height="180"></canvas>
+                <button onclick="downloadCanvas('apple180', 'apple-touch-icon.png')">Download</button>
+            </div>
+        </div>
+
+        <button onclick="generateAllFavicons()">🎨 Generate All Favicons</button>
+    </div>
+
+    <div class="asset-section">
+        <h2>🌐 Open Graph Image (1200x630)</h2>
+        <div class="info">
+            This image appears when your site is shared on social media (Twitter, Facebook, LinkedIn).
+        </div>
+
+        <canvas id="ogImage" width="1200" height="630"></canvas>
+        <br>
+        <button onclick="generateOGImage()">🎨 Generate OG Image</button>
+        <button onclick="downloadCanvas('ogImage', 'og-image.png')">⬇️ Download</button>
+    </div>
+
+    <div class="asset-section">
+        <h2>✅ Instructions</h2>
+        <div class="info">
+            <ol>
+                <li>Click "Generate All Favicons" to create all favicon sizes</li>
+                <li>Click "Generate OG Image" to create the social media preview</li>
+                <li>Download each image using the Download buttons</li>
+                <li>Place all downloaded files in your project root directory</li>
+                <li>For favicon.ico, you can use an online converter or the 32x32 PNG will work in most browsers</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Generate favicon with clean, modern design
+        function generateFavicon(canvasId, size) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+
+            // Background - solid blue
+            ctx.fillStyle = '#7aa2f7';
+            ctx.fillRect(0, 0, size, size);
+
+            // Add subtle corner rounding for apple icon
+            if (size >= 180) {
+                ctx.clearRect(0, 0, size, size);
+                ctx.fillStyle = '#7aa2f7';
+                ctx.beginPath();
+                ctx.roundRect(0, 0, size, size, size * 0.2);
+                ctx.fill();
+            }
+
+            // Calculate responsive sizing
+            const scale = size / 32; // Base design on 32px
+            const centerX = size / 2;
+            const centerY = size / 2;
+
+            // Draw stylized "J→S" representing JSON to Schema
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.5}px Arial, sans-serif`;
+
+            // For small sizes, use simplified design
+            if (size <= 32) {
+                // Draw "J" and "S" with arrow
+                ctx.font = `bold ${size * 0.45}px Arial, sans-serif`;
+                ctx.fillText('J', centerX - size * 0.2, centerY);
+                ctx.fillText('S', centerX + size * 0.2, centerY);
+
+                // Small arrow between
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = Math.max(1, size / 16);
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(centerX - size * 0.05, centerY);
+                ctx.lineTo(centerX + size * 0.05, centerY);
+                ctx.stroke();
+            } else {
+                // Larger icon - more detail
+                // JSON brackets on left
+                ctx.font = `${size * 0.35}px monospace`;
+                ctx.fillText('{', centerX - size * 0.25, centerY - size * 0.05);
+                ctx.fillText('}', centerX - size * 0.25, centerY + size * 0.25);
+
+                // Arrow in middle
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = size / 20;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                const arrowY = centerY + size * 0.1;
+                ctx.beginPath();
+                ctx.moveTo(centerX - size * 0.12, arrowY);
+                ctx.lineTo(centerX + size * 0.12, arrowY);
+                ctx.stroke();
+
+                // Arrow head
+                ctx.beginPath();
+                ctx.moveTo(centerX + size * 0.12, arrowY);
+                ctx.lineTo(centerX + size * 0.05, arrowY - size * 0.08);
+                ctx.moveTo(centerX + size * 0.12, arrowY);
+                ctx.lineTo(centerX + size * 0.05, arrowY + size * 0.08);
+                ctx.stroke();
+
+                // "TS" for TypeScript on right (or just "T")
+                ctx.fillStyle = 'white';
+                ctx.font = `bold ${size * 0.28}px Arial, sans-serif`;
+                ctx.fillText('TS', centerX + size * 0.28, centerY + size * 0.1);
+            }
+        }
+
+        function generateAllFavicons() {
+            generateFavicon('favicon16', 16);
+            generateFavicon('favicon32', 32);
+            generateFavicon('apple180', 180);
+            alert('✅ All favicons generated! Click Download buttons to save them.');
+        }
+
+        function generateOGImage() {
+            const canvas = document.getElementById('ogImage');
+            const ctx = canvas.getContext('2d');
+            const width = 1200;
+            const height = 630;
+
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, width, height);
+            gradient.addColorStop(0, '#1a1b26');
+            gradient.addColorStop(1, '#24283b');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // Grid pattern overlay
+            ctx.strokeStyle = 'rgba(114, 135, 253, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < width; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, height);
+                ctx.stroke();
+            }
+            for (let i = 0; i < height; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(width, i);
+                ctx.stroke();
+            }
+
+            // Accent shapes
+            ctx.fillStyle = 'rgba(122, 162, 247, 0.1)';
+            ctx.beginPath();
+            ctx.arc(100, 100, 150, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(187, 154, 247, 0.1)';
+            ctx.beginPath();
+            ctx.arc(width - 100, height - 100, 200, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Title
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 72px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('json2schema.app', width / 2, 180);
+
+            // Tagline
+            ctx.fillStyle = '#7dcfff';
+            ctx.font = '36px Inter, sans-serif';
+            ctx.fillText('Convert JSON to TypeScript, Python, Java, Zod & GraphQL', width / 2, 250);
+
+            // Code example box
+            const boxX = 150;
+            const boxY = 320;
+            const boxWidth = 900;
+            const boxHeight = 240;
+
+            // Box background
+            ctx.fillStyle = '#1e2030';
+            ctx.strokeStyle = '#414868';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 12);
+            ctx.fill();
+            ctx.stroke();
+
+            // Split box into two columns
+            const colWidth = boxWidth / 2;
+
+            // Left side - JSON
+            ctx.fillStyle = '#89DDFF';
+            ctx.font = 'bold 20px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText('JSON', boxX + 30, boxY + 40);
+
+            ctx.fillStyle = '#C3E88D';
+            ctx.font = '16px monospace';
+            ctx.fillText('{', boxX + 30, boxY + 75);
+            ctx.fillStyle = '#89DDFF';
+            ctx.fillText('  "name"', boxX + 30, boxY + 105);
+            ctx.fillStyle = '#C3E88D';
+            ctx.fillText(': "John",', boxX + 30 + 70, boxY + 105);
+            ctx.fillStyle = '#89DDFF';
+            ctx.fillText('  "age"', boxX + 30, boxY + 135);
+            ctx.fillStyle = '#F78C6C';
+            ctx.fillText(': 25', boxX + 30 + 70, boxY + 135);
+            ctx.fillStyle = '#C3E88D';
+            ctx.fillText('}', boxX + 30, boxY + 165);
+
+            // Divider line
+            ctx.strokeStyle = '#414868';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(boxX + colWidth, boxY + 20);
+            ctx.lineTo(boxX + colWidth, boxY + boxHeight - 20);
+            ctx.stroke();
+
+            // Arrow
+            ctx.fillStyle = '#7aa2f7';
+            ctx.font = '36px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('→', boxX + colWidth, boxY + boxHeight / 2 + 10);
+
+            // Right side - TypeScript
+            ctx.fillStyle = '#89DDFF';
+            ctx.font = 'bold 20px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText('TypeScript', boxX + colWidth + 30, boxY + 40);
+
+            ctx.fillStyle = '#C792EA';
+            ctx.font = '16px monospace';
+            ctx.fillText('interface', boxX + colWidth + 30, boxY + 75);
+            ctx.fillStyle = '#82AAFF';
+            ctx.fillText(' Root {', boxX + colWidth + 30 + 90, boxY + 75);
+            ctx.fillStyle = '#A6ACCD';
+            ctx.fillText('  name', boxX + colWidth + 30, boxY + 105);
+            ctx.fillStyle = '#C792EA';
+            ctx.fillText(': string;', boxX + colWidth + 30 + 60, boxY + 105);
+            ctx.fillStyle = '#A6ACCD';
+            ctx.fillText('  age', boxX + colWidth + 30, boxY + 135);
+            ctx.fillStyle = '#C792EA';
+            ctx.fillText(': number;', boxX + colWidth + 30 + 60, boxY + 135);
+            ctx.fillStyle = '#82AAFF';
+            ctx.fillText('}', boxX + colWidth + 30, boxY + 165);
+
+            // Features badges
+            const badges = ['Free', 'Private', 'Fast', 'No Signup'];
+            const badgeY = boxY + boxHeight + 40;
+            const badgeSpacing = 180;
+            const startX = width / 2 - (badges.length * badgeSpacing) / 2;
+
+            ctx.font = 'bold 18px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            badges.forEach((badge, i) => {
+                const x = startX + i * badgeSpacing;
+
+                // Badge background
+                ctx.fillStyle = 'rgba(122, 162, 247, 0.2)';
+                ctx.strokeStyle = '#7aa2f7';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(x - 60, badgeY - 20, 120, 36, 18);
+                ctx.fill();
+                ctx.stroke();
+
+                // Badge text
+                ctx.fillStyle = '#7dcfff';
+                ctx.fillText(badge, x, badgeY + 5);
+            });
+
+            alert('✅ OG Image generated! Click Download to save.');
+        }
+
+        function downloadCanvas(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Helper for rounded rectangles (for older browsers)
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+                this.moveTo(x + radius, y);
+                this.lineTo(x + width - radius, y);
+                this.quadraticCurveTo(x + width, y, x + width, y + radius);
+                this.lineTo(x + width, y + height - radius);
+                this.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                this.lineTo(x + radius, y + height);
+                this.quadraticCurveTo(x, y + height, x, y + height - radius);
+                this.lineTo(x, y + radius);
+                this.quadraticCurveTo(x, y, x + radius, y);
+                this.closePath();
+            };
+        }
+
+        // Auto-generate on load
+        window.onload = function() {
+            generateAllFavicons();
+            generateOGImage();
+        };
+    </script>
+</body>
+</html>
