@@ -1,0 +1,10 @@
+{
+  "id": 123,
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "age": 30,
+  "isActive": true,
+  "verified": false,
+  "balance": 1250.75,
+  "role": null
+}

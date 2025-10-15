@@ -1,0 +1,88 @@
+{
+  "company": {
+    "name": "TechCorp Inc.",
+    "founded": 2010,
+    "employees": 1500,
+    "public": true,
+    "headquarters": {
+      "street": "123 Innovation Drive",
+      "city": "San Francisco",
+      "state": "CA",
+      "zip": "94102",
+      "coordinates": {
+        "lat": 37.7749,
+        "lng": -122.4194
+      }
+    },
+    "departments": [
+      {
+        "id": "eng",
+        "name": "Engineering",
+        "headCount": 800,
+        "teams": [
+          {
+            "name": "Frontend",
+            "members": 150,
+            "technologies": ["React", "TypeScript", "Next.js"]
+          },
+          {
+            "name": "Backend",
+            "members": 200,
+            "technologies": ["Node.js", "Python", "Go"]
+          },
+          {
+            "name": "DevOps",
+            "members": 80,
+            "technologies": ["Kubernetes", "Docker", "AWS"]
+          }
+        ]
+      },
+      {
+        "id": "sales",
+        "name": "Sales",
+        "headCount": 300,
+        "teams": [
+          {
+            "name": "Enterprise",
+            "members": 150,
+            "technologies": null
+          },
+          {
+            "name": "SMB",
+            "members": 150,
+            "technologies": null
+          }
+        ]
+      }
+    ],
+    "financials": {
+      "revenue": 50000000,
+      "expenses": 35000000,
+      "profit": 15000000,
+      "quarters": [
+        {
+          "q": "Q1",
+          "revenue": 12000000,
+          "growth": 15.5
+        },
+        {
+          "q": "Q2",
+          "revenue": 13500000,
+          "growth": 12.5
+        },
+        {
+          "q": "Q3",
+          "revenue": 12000000,
+          "growth": 0.0
+        },
+        {
+          "q": "Q4",
+          "revenue": 12500000,
+          "growth": 4.17
+        }
+      ]
+    },
+    "active": true,
+    "notes": null
+  }
+}

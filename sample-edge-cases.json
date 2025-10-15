@@ -1,0 +1,21 @@
+{
+  "emptyString": "",
+  "emptyArray": [],
+  "emptyObject": {},
+  "nullValue": null,
+  "booleanTrue": true,
+  "booleanFalse": false,
+  "zeroNumber": 0,
+  "negativeNumber": -42,
+  "floatNumber": 3.14159,
+  "scientificNotation": 1.23e-4,
+  "specialChars": "Hello \"World\" with 'quotes' and \\backslash",
+  "unicode": "Unicode: 你好 مرحبا שלום 🎉",
+  "mixedArray": [1, "two", true, null, 5.5, false, "seven"],
+  "nestedNulls": {
+    "level1": null,
+    "level2": {
+      "value": null
+    }
+  }
+}

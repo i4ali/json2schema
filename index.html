@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON to Schema Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom scrollbar for webkit browsers */
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: #1F2937; /* bg-gray-800 */
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background-color: #4B5563; /* bg-gray-600 */
+            border-radius: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover {
+            background-color: #6B7280; /* bg-gray-500 */
+        }
+        .code-block::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .code-block::-webkit-scrollbar-track {
+            background: #1F2937;
+        }
+        .code-block::-webkit-scrollbar-thumb {
+            background-color: #4B5563;
+            border-radius: 4px;
+        }
+        .code-block::-webkit-scrollbar-thumb:hover {
+            background-color: #6B7280;
+        }
+
+        /* Syntax highlighting colors */
+        .token-keyword { color: #C792EA; } /* Purple - keywords like interface, class, import */
+        .token-type { color: #82AAFF; } /* Blue - type names and built-in types */
+        .token-function { color: #89DDFF; } /* Cyan - function calls */
+        .token-property { color: #A6ACCD; } /* Light gray - property names */
+        .token-string { color: #C3E88D; } /* Green - strings */
+        .token-number { color: #F78C6C; } /* Orange - numbers */
+        .token-comment { color: #676E95; font-style: italic; } /* Gray - comments */
+        .token-punctuation { color: #89DDFF; } /* Cyan - brackets, braces, etc */
+        .token-decorator { color: #FFCB6B; } /* Yellow - decorators like @dataclass */
+
+        /* JSON-specific tokens */
+        .json-key { color: #89DDFF; } /* Cyan - JSON keys */
+        .json-string { color: #C3E88D; } /* Green - JSON string values */
+        .json-number { color: #F78C6C; } /* Orange - JSON numbers */
+        .json-boolean { color: #C792EA; } /* Purple - true/false */
+        .json-null { color: #676E95; } /* Gray - null */
+        .json-punctuation { color: #89DDFF; } /* Cyan - brackets, braces, colons, commas */
+
+        /* Textarea overlay styling */
+        #json-input::placeholder {
+            color: #6B7280;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="text-gray-200">
+
+    <div id="app" class="min-h-screen flex flex-col p-4 md:p-6 lg:p-8">
+        
+        <!-- Header -->
+        <header class="mb-6 pb-4 border-b border-gray-700">
+            <h1 class="text-3xl md:text-4xl font-bold text-white">JSON to Schema Generator</h1>
+            <p class="mt-2 text-gray-400">Paste your JSON data to instantly generate type definitions and validation schemas for any language.
+                <span class="font-semibold text-emerald-400">All processing is done in your browser; your data is never uploaded.</span>
+            </p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+            
+            <!-- Input Column -->
+            <div class="flex flex-col h-full min-h-[400px] lg:min-h-0">
+                <div class="flex items-center justify-between mb-2">
+                    <label for="json-input" class="text-lg font-semibold text-gray-300">JSON Input</label>
+                    <div class="flex items-center gap-4">
+                        <button id="clear-btn" class="text-sm font-medium text-red-400 hover:text-red-300 transition-colors">Clear</button>
+                        <button id="sample-data-btn" class="text-sm font-medium text-sky-400 hover:text-sky-300 transition-colors">Load Sample</button>
+                    </div>
+                </div>
+                <div class="relative w-full flex-grow">
+                    <div id="json-highlight" class="absolute inset-0 bg-gray-800 border border-gray-700 rounded-lg p-4 font-mono text-sm overflow-auto pointer-events-none whitespace-pre-wrap break-words"></div>
+                    <textarea
+                        id="json-input"
+                        class="absolute inset-0 w-full h-full bg-transparent border border-gray-700 rounded-lg p-4 font-mono text-sm text-transparent caret-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition-shadow resize-none whitespace-pre-wrap break-words"
+                        spellcheck="false"
+                        placeholder="Paste your JSON here..."></textarea>
+                </div>
+            </div>
+
+            <!-- Output Column -->
+            <div class="flex flex-col h-full min-h-[400px] lg:min-h-0">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-3">
+                        <label for="schema-type" class="text-lg font-semibold text-gray-300">Generated Schema</label>
+                        <select id="schema-type" class="bg-gray-800 border border-gray-700 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <option value="typescript">TypeScript</option>
+                            <option value="zod">Zod Schema</option>
+                            <option value="python">Python (dataclasses)</option>
+                            <option value="java">Java</option>
+                            <option value="graphql">GraphQL Schema</option>
+                        </select>
+                    </div>
+                    <button id="copy-btn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded-md text-sm transition-colors flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <span id="copy-text">Copy</span>
+                    </button>
+                </div>
+                <div class="relative w-full flex-grow bg-gray-800 border border-gray-700 rounded-lg font-mono text-sm overflow-auto code-block">
+                    <pre><code id="output-code" class="language-javascript block p-4 text-gray-300"></code></pre>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const jsonInput = document.getElementById('json-input');
+        const jsonHighlight = document.getElementById('json-highlight');
+        const outputCode = document.getElementById('output-code');
+        const schemaTypeSelect = document.getElementById('schema-type');
+        const sampleBtn = document.getElementById('sample-data-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const copyBtn = document.getElementById('copy-btn');
+        const copyText = document.getElementById('copy-text');
+
+        // --- Sample Data ---
+        const sampleJSON = {
+            "id": 1,
+            "name": "Leanne Graham",
+            "username": "Bret",
+            "email": "Sincere@april.biz",
+            "address": {
+                "street": "Kulas Light",
+                "suite": "Apt. 556",
+                "city": "Gwenborough",
+                "zipcode": "92998-3874",
+                "geo": {
+                    "lat": -37.3159,
+                    "lng": 81.1496
+                }
+            },
+            "phone": "1-770-736-8031 x56442",
+            "website": "hildegard.org",
+            "company": {
+                "name": "Romaguera-Crona",
+                "catchPhrase": "Multi-layered client-server neural-net",
+                "bs": "harness real-time e-markets"
+            },
+            "posts": [{
+                "userId": 1,
+                "id": 1,
+                "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+                "tags": ["dev", "js", null]
+            }],
+            "isActive": true,
+            "metadata": null
+        };
+
+        // --- Utility Functions ---
+        const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+        const toTypeName = (key) => key.split(/_|-/).map(capitalize).join('');
+        
+        const inferType = (value) => {
+            if (value === null) return 'null';
+            if (Array.isArray(value)) return 'array';
+            if (typeof value === 'object') return 'object';
+            if (typeof value === 'number') {
+                return Number.isInteger(value) ? 'integer' : 'float';
+            }
+            return typeof value;
+        };
+        
+        // --- Schema Generation Logic ---
+        const generators = {
+            // TypeScript Generator
+            typescript: {
+                name: 'TypeScript',
+                generate: (json) => {
+                    const typeDefinitions = new Map();
+                    function buildType(data, nameHint) {
+                        const typeName = capitalize(nameHint);
+                        if (typeDefinitions.has(typeName)) return typeName;
+
+                        const objectType = inferType(data);
+                        if (objectType !== 'object') {
+                            return mapTsType(data);
+                        }
+                        
+                        let definition = `interface ${typeName} {\n`;
+                        for (const key in data) {
+                            const value = data[key];
+                            const inferred = inferType(value);
+                            let valueType;
+                            if (inferred === 'object') {
+                                valueType = buildType(value, toTypeName(key));
+                            } else if (inferred === 'array') {
+                                if (value.length > 0) {
+                                    const firstItemType = inferType(value[0]);
+                                    if(firstItemType === 'object') {
+                                        const arrayTypeName = buildType(value[0], toTypeName(key.endsWith('s') ? key.slice(0, -1) : key));
+                                        valueType = `${arrayTypeName}[]`;
+                                    } else {
+                                        // Handle array of primitives
+                                        const types = [...new Set(value.map(mapTsType))];
+                                        valueType = types.length > 1 ? `(${types.join(' | ')})[]` : `${types[0]}[]`;
+                                    }
+                                } else {
+                                    valueType = 'any[]';
+                                }
+                            } else {
+                                valueType = mapTsType(value);
+                            }
+                            definition += `  ${key}: ${valueType};\n`;
+                        }
+                        definition += '}';
+                        typeDefinitions.set(typeName, definition);
+                        return typeName;
+                    }
+                    buildType(json, 'Root');
+
+                    return Array.from(typeDefinitions.values()).join('\n\n');
+                }
+            },
+            // Zod Generator
+            zod: {
+                name: 'Zod',
+                generate: (json) => {
+                    const schemaDefinitions = new Map();
+                    function buildSchema(data, nameHint) {
+                        const schemaName = `${nameHint.charAt(0).toLowerCase() + nameHint.slice(1)}Schema`;
+                        const typeName = capitalize(nameHint);
+                        if (schemaDefinitions.has(typeName)) return `z.lazy(() => ${schemaName})`;
+
+                        const objectType = inferType(data);
+                         if (objectType !== 'object') {
+                            return mapZodType(data);
+                        }
+
+                        let definition = `const ${schemaName} = z.object({\n`;
+                        schemaDefinitions.set(typeName, ''); // Placeholder to break recursion
+
+                        for (const key in data) {
+                            const value = data[key];
+                            const inferred = inferType(value);
+                            let valueSchema;
+                             if (inferred === 'object') {
+                                valueSchema = buildSchema(value, toTypeName(key));
+                            } else if (inferred === 'array') {
+                                if (value.length > 0) {
+                                     const firstItemType = inferType(value[0]);
+                                     if(firstItemType === 'object') {
+                                        const arraySchemaName = buildSchema(value[0], toTypeName(key.endsWith('s') ? key.slice(0, -1) : key));
+                                        valueSchema = `z.array(${arraySchemaName})`;
+                                     } else {
+                                        const types = [...new Set(value.map(v => mapZodType(v).replace('.nullable()', '')))];
+                                        if (types.length > 1) {
+                                          const union = types.map(t => `${t}`).join(', ');
+                                          valueSchema = `z.array(z.union([${union}])).nullable()`;
+                                        } else {
+                                          valueSchema = `z.array(${types[0]}).nullable()`;
+                                        }
+                                     }
+                                } else {
+                                    valueSchema = 'z.array(z.any())';
+                                }
+                            } else {
+                                valueSchema = mapZodType(value);
+                            }
+                            definition += `  ${key}: ${valueSchema},\n`;
+                        }
+                        definition += '});';
+                        schemaDefinitions.set(typeName, definition);
+                        return schemaName;
+                    }
+                    buildSchema(json, 'Root');
+                    
+                    const header = `import { z } from 'zod';\n\n`;
+                    return header + Array.from(schemaDefinitions.values()).filter(Boolean).join('\n\n');
+                }
+            },
+            // Python dataclasses Generator
+            python: {
+                name: 'Python',
+                generate: (json) => {
+                    const classDefinitions = new Map();
+                    const imports = new Set(['dataclasses', 'typing']);
+
+                    function buildClass(data, nameHint) {
+                        const typeName = toTypeName(nameHint);
+                         if (classDefinitions.has(typeName)) return typeName;
+
+                        const objectType = inferType(data);
+                        if (objectType !== 'object') return mapPythonType(data);
+
+                        let definition = `@dataclass\nclass ${typeName}:\n`;
+                        classDefinitions.set(typeName, ''); // Placeholder
+
+                        for (const key in data) {
+                             const value = data[key];
+                            const inferred = inferType(value);
+                            let valueType;
+                            if (inferred === 'object') {
+                                valueType = buildClass(value, toTypeName(key));
+                            } else if (inferred === 'array') {
+                                imports.add('List');
+                                if (value.length > 0) {
+                                    const firstItemType = inferType(value[0]);
+                                    if(firstItemType === 'object') {
+                                        const arrayTypeName = buildClass(value[0], toTypeName(key.endsWith('s') ? key.slice(0, -1) : key));
+                                        valueType = `List[${arrayTypeName}]`;
+                                    } else {
+                                        const types = [...new Set(value.map(mapPythonType))];
+                                        if (types.includes('Any')) {
+                                          valueType = 'List[Any]';
+                                          imports.add('Any');
+                                        } else if (types.length > 1) {
+                                           valueType = `List[Union[${types.join(', ')}]]`;
+                                           imports.add('Union');
+                                        } else {
+                                            valueType = `List[${types[0]}]`;
+                                        }
+                                    }
+                                } else {
+                                    imports.add('Any');
+                                    valueType = 'List[Any]';
+                                }
+                            } else {
+                                valueType = mapPythonType(value);
+                                if (valueType.startsWith('Optional')) imports.add('Optional');
+                            }
+                            definition += `    ${key}: ${valueType}\n`;
+                        }
+                        classDefinitions.set(typeName, definition);
+                        return typeName;
+                    }
+                    buildClass(json, 'Root');
+
+                    let header = '';
+                    if (imports.has('dataclasses')) header += 'from dataclasses import dataclass\n';
+                    const typingImports = ['List', 'Dict', 'Any', 'Optional', 'Union'].filter(i => imports.has(i));
+                    if(typingImports.length > 0) header += `from typing import ${typingImports.join(', ')}\n`;
+                    
+                    return header + '\n' + Array.from(classDefinitions.values()).filter(Boolean).join('\n');
+                }
+            },
+            // Java Generator
+            java: {
+                name: 'Java',
+                generate: (json) => {
+                    const classDefinitions = new Map();
+                    const imports = new Set();
+
+                    function buildClass(data, nameHint) {
+                        const typeName = toTypeName(nameHint);
+                        if (classDefinitions.has(typeName)) return typeName;
+
+                        const objectType = inferType(data);
+                        if (objectType !== 'object') return mapJavaType(data);
+
+                        let definition = `public class ${typeName} {\n`;
+                        classDefinitions.set(typeName, ''); // Placeholder
+
+                        for (const key in data) {
+                            const value = data[key];
+                            const inferred = inferType(value);
+                            let valueType;
+                            if (inferred === 'object') {
+                                valueType = buildClass(value, toTypeName(key));
+                            } else if (inferred === 'array') {
+                                imports.add('java.util.List');
+                                if (value.length > 0) {
+                                    const firstItemType = inferType(value[0]);
+                                    if(firstItemType === 'object') {
+                                        const arrayTypeName = buildClass(value[0], toTypeName(key.endsWith('s') ? key.slice(0, -1) : key));
+                                        valueType = `List<${arrayTypeName}>`;
+                                    } else {
+                                        const types = [...new Set(value.map(mapJavaType))];
+                                        if (types.includes('Object')) {
+                                            valueType = 'List<Object>';
+                                        } else if (types.length > 1) {
+                                            valueType = 'List<Object>';
+                                        } else {
+                                            valueType = `List<${types[0]}>`;
+                                        }
+                                    }
+                                } else {
+                                    valueType = 'List<Object>';
+                                }
+                            } else {
+                                valueType = mapJavaType(value);
+                            }
+                            definition += `    private ${valueType} ${key};\n`;
+                        }
+
+                        definition += '\n    // Getters and Setters\n';
+                        for (const key in data) {
+                            const value = data[key];
+                            const inferred = inferType(value);
+                            let valueType;
+                            if (inferred === 'object') {
+                                valueType = toTypeName(key);
+                            } else if (inferred === 'array') {
+                                if (value.length > 0 && inferType(value[0]) === 'object') {
+                                    const arrayTypeName = toTypeName(key.endsWith('s') ? key.slice(0, -1) : key);
+                                    valueType = `List<${arrayTypeName}>`;
+                                } else {
+                                    const types = [...new Set(value.map(mapJavaType))];
+                                    if (types.includes('Object') || types.length > 1) {
+                                        valueType = 'List<Object>';
+                                    } else if (value.length > 0) {
+                                        valueType = `List<${types[0]}>`;
+                                    } else {
+                                        valueType = 'List<Object>';
+                                    }
+                                }
+                            } else {
+                                valueType = mapJavaType(value);
+                            }
+                            const capitalizedKey = capitalize(key);
+                            definition += `    public ${valueType} get${capitalizedKey}() { return ${key}; }\n`;
+                            definition += `    public void set${capitalizedKey}(${valueType} ${key}) { this.${key} = ${key}; }\n`;
+                        }
+
+                        definition += '}';
+                        classDefinitions.set(typeName, definition);
+                        return typeName;
+                    }
+                    buildClass(json, 'Root');
+
+                    let header = '';
+                    if (imports.size > 0) {
+                        header = Array.from(imports).map(imp => `import ${imp};`).join('\n') + '\n\n';
+                    }
+
+                    return header + Array.from(classDefinitions.values()).filter(Boolean).join('\n\n');
+                }
+            },
+            // GraphQL Generator
+            graphql: {
+                name: 'GraphQL',
+                generate: (json) => {
+                    const typeDefs = new Map();
+                    function buildGqlType(data, nameHint) {
+                        const typeName = toTypeName(nameHint);
+                        if (typeDefs.has(typeName)) return typeName;
+
+                        const objectType = inferType(data);
+                        if (objectType !== 'object') return mapGqlType(data);
+
+                        let definition = `type ${typeName} {\n`;
+                        typeDefs.set(typeName, '');
+
+                        for (const key in data) {
+                            const value = data[key];
+                            const inferred = inferType(value);
+                            let valueType;
+                            if (inferred === 'object') {
+                                valueType = buildGqlType(value, toTypeName(key));
+                            } else if (inferred === 'array') {
+                                if (value.length > 0) {
+                                    const arrayTypeName = buildGqlType(value[0], toTypeName(key.endsWith('s') ? key.slice(0, -1) : key));
+                                    valueType = `[${arrayTypeName}]`;
+                                } else {
+                                    valueType = `[String]`; // Default guess
+                                }
+                            } else {
+                                valueType = mapGqlType(value);
+                            }
+                            definition += `  ${key}: ${valueType}\n`;
+                        }
+                        definition += '}';
+                        typeDefs.set(typeName, definition);
+                        return typeName;
+                    }
+                    buildGqlType(json, 'Root');
+                    return Array.from(typeDefs.values()).filter(Boolean).join('\n\n');
+                }
+            }
+        };
+
+        const mapTsType = (v) => {
+            const t = inferType(v);
+            if (t === 'string') return 'string';
+            if (t === 'integer' || t === 'float') return 'number';
+            if (t === 'boolean') return 'boolean';
+            return 'any';
+        };
+
+        const mapZodType = (v) => {
+            const t = inferType(v);
+            let schema;
+            if (t === 'string') schema = 'z.string()';
+            else if (t === 'integer') schema = 'z.number().int()';
+            else if (t === 'float') schema = 'z.number()';
+            else if (t === 'boolean') schema = 'z.boolean()';
+            else schema = 'z.any()';
+            
+            if (v === null) return 'z.null()';
+            
+            return schema;
+        };
+        
+        const mapPythonType = (v) => {
+            const t = inferType(v);
+            if (v === null) return 'Optional[Any]';
+            if (t === 'string') return 'str';
+            if (t === 'integer') return 'int';
+            if (t === 'float') return 'float';
+            if (t === 'boolean') return 'bool';
+            return 'Any';
+        };
+
+        const mapJavaType = (v) => {
+            const t = inferType(v);
+            if (v === null) return 'Object';
+            if (t === 'string') return 'String';
+            if (t === 'integer') return 'Integer';
+            if (t === 'float') return 'Double';
+            if (t === 'boolean') return 'Boolean';
+            return 'Object';
+        };
+
+        const mapGqlType = (v) => {
+            const t = inferType(v);
+            if (t === 'string') return 'String';
+            if (t === 'integer') return 'Int';
+            if (t === 'float') return 'Float';
+            if (t === 'boolean') return 'Boolean';
+            return 'String'; // GraphQL doesn't have an 'any' type
+        };
+
+        // --- Syntax Highlighting ---
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function highlightCode(code, language) {
+            // Create a temporary marker to prevent double-encoding
+            const MARKER = '\u0000';
+
+            const patterns = {
+                typescript: [
+                    { regex: /\b(interface|type|enum|extends|implements|export|import|from|as|const|let|var|function|return|new)\b/g, className: 'token-keyword' },
+                    { regex: /\b(string|number|boolean|any|void|never|unknown|null|undefined|Array)\b/g, className: 'token-type' },
+                    { regex: /\b([A-Z][a-zA-Z0-9]*)\b/g, className: 'token-type' },
+                    { regex: /([a-zA-Z_][a-zA-Z0-9_]*)(?=:)/g, className: 'token-property' },
+                    { regex: /(\/\/.*$)/gm, className: 'token-comment' },
+                ],
+                java: [
+                    { regex: /(\/\/.*$)/gm, className: 'token-comment' },
+                    { regex: /\b(public|private|protected|static|final|class|interface|extends|implements|import|package|new|return|void|this)\b/g, className: 'token-keyword' },
+                    { regex: /\b(String|Integer|Double|Boolean|Long|Float|Object|List|Map|Set)\b/g, className: 'token-type' },
+                    { regex: /\b([A-Z][a-zA-Z0-9]*)\b/g, className: 'token-type' },
+                    { regex: /\b(get|set)([A-Z][a-zA-Z0-9]*)/g, className: 'token-function' },
+                ],
+                python: [
+                    { regex: /(#.*$)/gm, className: 'token-comment' },
+                    { regex: /(@[a-zA-Z_][a-zA-Z0-9_]*)/g, className: 'token-decorator' },
+                    { regex: /\b(class|def|from|import|return|pass|None|True|False|if|elif|else|for|while|in|is|not|and|or)\b/g, className: 'token-keyword' },
+                    { regex: /\b(str|int|float|bool|list|dict|tuple|set|List|Dict|Tuple|Set|Optional|Union|Any)\b/g, className: 'token-type' },
+                    { regex: /\b([A-Z][a-zA-Z0-9]*)\b/g, className: 'token-type' },
+                    { regex: /([a-zA-Z_][a-zA-Z0-9_]*)(?=:)/g, className: 'token-property' },
+                ],
+                zod: [
+                    { regex: /(\/\/.*$)/gm, className: 'token-comment' },
+                    { regex: /(['"])(.*?)\1/g, className: 'token-string' },
+                    { regex: /\b(import|from|const|let|var|export|as)\b/g, className: 'token-keyword' },
+                    { regex: /\b(z)(?=\.)/g, className: 'token-function' },
+                    { regex: /\.(string|number|boolean|object|array|null|any|union|lazy|int)\b/g, className: 'token-function' },
+                    { regex: /\b([a-z][a-zA-Z0-9]*Schema)\b/g, className: 'token-type' },
+                ],
+                graphql: [
+                    { regex: /(#.*$)/gm, className: 'token-comment' },
+                    { regex: /\b(type|interface|enum|input|scalar|schema|query|mutation|subscription|implements|extends)\b/g, className: 'token-keyword' },
+                    { regex: /\b(String|Int|Float|Boolean|ID)\b/g, className: 'token-type' },
+                    { regex: /\b([A-Z][a-zA-Z0-9]*)\b/g, className: 'token-type' },
+                    { regex: /([a-zA-Z_][a-zA-Z0-9_]*)(?=:)/g, className: 'token-property' },
+                ],
+            };
+
+            const languagePatterns = patterns[language] || patterns.typescript;
+
+            // Split by lines to preserve structure
+            const lines = code.split('\n');
+            const highlightedLines = lines.map(line => {
+                let highlighted = escapeHtml(line);
+
+                // Track which parts have been highlighted to avoid overlaps
+                const markers = [];
+
+                languagePatterns.forEach(pattern => {
+                    // Reset regex
+                    pattern.regex.lastIndex = 0;
+
+                    let match;
+                    const tempMatches = [];
+
+                    // Find all matches
+                    while ((match = pattern.regex.exec(highlighted)) !== null) {
+                        // Check if this position overlaps with existing markers
+                        const start = match.index;
+                        const end = start + match[0].length;
+                        const overlaps = markers.some(m =>
+                            (start >= m.start && start < m.end) ||
+                            (end > m.start && end <= m.end) ||
+                            (start <= m.start && end >= m.end)
+                        );
+
+                        if (!overlaps) {
+                            tempMatches.push({ match: match[0], start, end, className: pattern.className });
+                            markers.push({ start, end });
+                        }
+                    }
+
+                    // Apply matches in reverse order to maintain positions
+                    tempMatches.reverse().forEach(({ match, start, end, className }) => {
+                        highlighted =
+                            highlighted.substring(0, start) +
+                            `<span class="${className}">${match}</span>` +
+                            highlighted.substring(end);
+                    });
+                });
+
+                return highlighted;
+            });
+
+            return highlightedLines.join('\n');
+        }
+
+        function highlightJSON(json) {
+            // Escape HTML first
+            json = escapeHtml(json);
+
+            // Highlight JSON syntax
+            json = json.replace(/("(?:[^"\\]|\\.)*")(\s*:)/g, '<span class="json-key">$1</span><span class="json-punctuation">$2</span>'); // Keys
+            json = json.replace(/:\s*("(?:[^"\\]|\\.)*")/g, ': <span class="json-string">$1</span>'); // String values
+            json = json.replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="json-number">$1</span>'); // Numbers
+            json = json.replace(/:\s*\b(true|false)\b/g, ': <span class="json-boolean">$1</span>'); // Booleans
+            json = json.replace(/:\s*\b(null)\b/g, ': <span class="json-null">$1</span>'); // null
+            json = json.replace(/([\[\]\{\},])/g, '<span class="json-punctuation">$1</span>'); // Punctuation
+
+            // Handle array values (not after colons)
+            json = json.replace(/\[\s*("(?:[^"\\]|\\.)*")/g, '[<span class="json-string">$1</span>');
+            json = json.replace(/,\s*("(?:[^"\\]|\\.)*")/g, ', <span class="json-string">$1</span>');
+            json = json.replace(/\[\s*(-?\d+\.?\d*)/g, '[<span class="json-number">$1</span>');
+            json = json.replace(/,\s*(-?\d+\.?\d*)/g, ', <span class="json-number">$1</span>');
+            json = json.replace(/\[\s*\b(true|false)\b/g, '[<span class="json-boolean">$1</span>');
+            json = json.replace(/,\s*\b(true|false)\b/g, ', <span class="json-boolean">$1</span>');
+            json = json.replace(/\[\s*\b(null)\b/g, '[<span class="json-null">$1</span>');
+            json = json.replace(/,\s*\b(null)\b/g, ', <span class="json-null">$1</span>');
+
+            return json;
+        }
+
+        function syncScroll() {
+            jsonHighlight.scrollTop = jsonInput.scrollTop;
+            jsonHighlight.scrollLeft = jsonInput.scrollLeft;
+        }
+
+        function updateJSONHighlight() {
+            const text = jsonInput.value;
+            if (text) {
+                jsonHighlight.innerHTML = highlightJSON(text);
+            } else {
+                jsonHighlight.innerHTML = '';
+            }
+            syncScroll();
+        }
+
+        // --- Main Application Logic ---
+        function processJSON() {
+            const jsonString = jsonInput.value;
+            if (!jsonString.trim()) {
+                outputCode.innerHTML = highlightCode('// Paste your JSON on the left to get started', 'typescript');
+                return;
+            }
+
+            try {
+                const json = JSON.parse(jsonString);
+                const schemaType = schemaTypeSelect.value;
+                const generator = generators[schemaType];
+                if (generator) {
+                    const result = generator.generate(json);
+                    outputCode.innerHTML = highlightCode(result, schemaType);
+                }
+            } catch (error) {
+                outputCode.innerHTML = highlightCode(`// Invalid JSON: ${error.message}`, 'typescript');
+            }
+        }
+        
+        // --- Event Listeners ---
+        jsonInput.addEventListener('input', () => {
+            updateJSONHighlight();
+            processJSON();
+        });
+        jsonInput.addEventListener('scroll', syncScroll);
+        schemaTypeSelect.addEventListener('change', processJSON);
+
+        sampleBtn.addEventListener('click', () => {
+            jsonInput.value = JSON.stringify(sampleJSON, null, 2);
+            updateJSONHighlight();
+            processJSON();
+        });
+
+        clearBtn.addEventListener('click', () => {
+            jsonInput.value = '';
+            updateJSONHighlight();
+            processJSON();
+        });
+
+        copyBtn.addEventListener('click', () => {
+            // Get plain text without HTML tags
+            const plainText = outputCode.innerText || outputCode.textContent;
+            navigator.clipboard.writeText(plainText).then(() => {
+                copyText.textContent = 'Copied!';
+                copyBtn.classList.add('bg-emerald-600');
+                setTimeout(() => {
+                    copyText.textContent = 'Copy';
+                    copyBtn.classList.remove('bg-emerald-600');
+                }, 2000);
+            });
+        });
+
+        // Initial load
+        sampleBtn.click();
+
+    </script>
+</body>
+</html>

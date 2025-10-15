@@ -1,0 +1,29 @@
+{
+  "user": {
+    "id": 1001,
+    "username": "alice_wonder",
+    "profile": {
+      "firstName": "Alice",
+      "lastName": "Wonderland",
+      "age": 28,
+      "avatar": "https://example.com/avatar.jpg"
+    },
+    "settings": {
+      "theme": "dark",
+      "notifications": {
+        "email": true,
+        "push": false,
+        "sms": true
+      },
+      "privacy": {
+        "profileVisible": true,
+        "showEmail": false
+      }
+    }
+  },
+  "metadata": {
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-12-20T14:45:30Z",
+    "version": 2
+  }
+}

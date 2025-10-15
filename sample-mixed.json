@@ -1,0 +1,35 @@
+{
+  "apiResponse": {
+    "status": "success",
+    "code": 200,
+    "timestamp": 1703089234567,
+    "data": {
+      "users": [
+        {
+          "id": 1,
+          "name": "Alice Smith",
+          "email": "alice@example.com",
+          "age": 32,
+          "premium": true,
+          "score": 95.5
+        },
+        {
+          "id": 2,
+          "name": "Bob Johnson",
+          "email": "bob@example.com",
+          "age": 28,
+          "premium": false,
+          "score": 87.3
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "perPage": 10,
+        "total": 2,
+        "hasNext": false
+      }
+    },
+    "errors": null,
+    "warnings": []
+  }
+}

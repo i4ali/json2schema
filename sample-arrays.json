@@ -1,0 +1,32 @@
+{
+  "store": {
+    "name": "Tech Store",
+    "location": "San Francisco",
+    "products": [
+      {
+        "id": 1,
+        "name": "Laptop",
+        "price": 999.99,
+        "inStock": true,
+        "tags": ["electronics", "computers", "portable"]
+      },
+      {
+        "id": 2,
+        "name": "Wireless Mouse",
+        "price": 29.99,
+        "inStock": true,
+        "tags": ["electronics", "accessories"]
+      },
+      {
+        "id": 3,
+        "name": "USB-C Cable",
+        "price": 12.50,
+        "inStock": false,
+        "tags": ["accessories", "cables"]
+      }
+    ],
+    "categories": ["Electronics", "Accessories", "Computers"],
+    "ratings": [4.5, 4.8, 4.2, 5.0, 4.7],
+    "openDays": [1, 2, 3, 4, 5]
+  }
+}
